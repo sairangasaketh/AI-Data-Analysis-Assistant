@@ -1,28 +1,33 @@
 import os
-
+import streamlit as st
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-from utils.prompts import (
+from .prompts import (
     dataset_summary_prompt,
-    question_prompt,
-    report_prompt,
     insight_prompt,
+    report_prompt,
+    question_prompt,
 )
+# Load local .env (ignored if it doesn't exist)
+load_dotenv(override=False)
 
-load_dotenv()
+# Try local .env first
+api_key = os.getenv("GEMINI_API_KEY")
 
-API_KEY = os.getenv("GEMINI_API_KEY")
+# If not found, try Streamlit Cloud Secrets
+if not api_key:
+    api_key = st.secrets.get("GEMINI_API_KEY")
 
-if not API_KEY:
+# Raise an error only if neither source provides a key
+if not api_key:
     raise ValueError(
-        "GEMINI_API_KEY not found. Please add it to your .env file."
+        "GEMINI_API_KEY not found. Add it to your local .env file or Streamlit Cloud Secrets."
     )
 
-genai.configure(api_key=API_KEY)
+genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
-
 
 def ask_gemini(question: str, dataframe_info: str = ""):
     """
